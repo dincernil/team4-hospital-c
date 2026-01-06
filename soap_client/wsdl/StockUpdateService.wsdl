@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://schemas.xmlsoap.org/wsdl/"
+             xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+             xmlns:tns="http://hospital-supply-chain.example.com/soap/stock"
+             xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+             name="StockUpdateService"
+             targetNamespace="http://hospital-supply-chain.example.com/soap/stock">
+
+    <!-- ============================================== -->
+    <!-- Types: XML Schema Definitions                  -->
+    <!-- ============================================== -->
+    <types>
+        <xsd:schema targetNamespace="http://hospital-supply-chain.example.com/soap/stock"
+                    elementFormDefault="qualified">
+
+            <!-- StockUpdateRequest Input -->
+            <xsd:element name="StockUpdateRequest">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="hospitalId" type="xsd:string" minOccurs="1">
+                            <xsd:annotation>
+                                <xsd:documentation>Unique identifier for the hospital</xsd:documentation>
+                            </xsd:annotation>
+                        </xsd:element>
+                        <xsd:element name="productCode" type="xsd:string" minOccurs="1">
+                            <xsd:annotation>
+                                <xsd:documentation>Product/SKU code for the inventory item</xsd:documentation>
+                            </xsd:annotation>
+                        </xsd:element>
+                        <xsd:element name="currentStockUnits" type="xsd:int" minOccurs="1">
+                            <xsd:annotation>
+                                <xsd:documentation>Current stock quantity in units</xsd:documentation>
+                            </xsd:annotation>
+                        </xsd:element>
+                        <xsd:element name="dailyConsumptionUnits" type="xsd:int" minOccurs="1">
+                            <xsd:annotation>
+                                <xsd:documentation>Average daily consumption in units</xsd:documentation>
+                            </xsd:annotation>
+                        </xsd:element>
+                        <xsd:element name="daysOfSupply" type="xsd:decimal" minOccurs="1">
+                            <xsd:annotation>
+                                <xsd:documentation>Calculated days of supply remaining</xsd:documentation>
+                            </xsd:annotation>
+                        </xsd:element>
+                        <xsd:element name="timestamp" type="xsd:dateTime" minOccurs="1">
+                            <xsd:annotation>
+                                <xsd:documentation>Timestamp of the stock update</xsd:documentation>
+                            </xsd:annotation>
+                        </xsd:element>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+
+            <!-- StockUpdateResponse Output -->
+            <xsd:element name="StockUpdateResponse">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="success" type="xsd:boolean" minOccurs="1">
+                            <xsd:annotation>
+                                <xsd:documentation>Whether the stock update was processed successfully</xsd:documentation>
+                            </xsd:annotation>
+                        </xsd:element>
+                        <xsd:element name="message" type="xsd:string" minOccurs="1">
+                            <xsd:annotation>
+                                <xsd:documentation>Response message with details</xsd:documentation>
+                            </xsd:annotation>
+                        </xsd:element>
+                        <xsd:element name="orderTriggered" type="xsd:boolean" minOccurs="1">
+                            <xsd:annotation>
+                                <xsd:documentation>Whether an automatic order was triggered</xsd:documentation>
+                            </xsd:annotation>
+                        </xsd:element>
+                        <xsd:element name="orderId" type="xsd:string" minOccurs="0">
+                            <xsd:annotation>
+                                <xsd:documentation>Order ID if an order was triggered (optional)</xsd:documentation>
+                            </xsd:annotation>
+                        </xsd:element>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+
+            <!-- SOAP Fault Detail -->
+            <xsd:element name="StockUpdateFault">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="errorCode" type="xsd:string"/>
+                        <xsd:element name="errorMessage" type="xsd:string"/>
+                        <xsd:element name="hospitalId" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="productCode" type="xsd:string" minOccurs="0"/>
+                        <xsd:element name="timestamp" type="xsd:dateTime"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+
+        </xsd:schema>
+    </types>
+
+    <!-- ============================================== -->
+    <!-- Messages                                       -->
+    <!-- ============================================== -->
+    <message name="StockUpdateRequestMessage">
+        <part name="parameters" element="tns:StockUpdateRequest"/>
+    </message>
+
+    <message name="StockUpdateResponseMessage">
+        <part name="parameters" element="tns:StockUpdateResponse"/>
+    </message>
+
+    <message name="StockUpdateFaultMessage">
+        <part name="fault" element="tns:StockUpdateFault"/>
+    </message>
+
+    <!-- ============================================== -->
+    <!-- Port Type (Interface)                          -->
+    <!-- ============================================== -->
+    <portType name="StockUpdatePortType">
+        <operation name="StockUpdate">
+            <documentation>
+                Processes a stock update from a hospital and determines if an order should be triggered.
+                Returns success status and order information if applicable.
+            </documentation>
+            <input message="tns:StockUpdateRequestMessage"/>
+            <output message="tns:StockUpdateResponseMessage"/>
+            <fault name="StockUpdateFault" message="tns:StockUpdateFaultMessage"/>
+        </operation>
+    </portType>
+
+    <!-- ============================================== -->
+    <!-- Binding (SOAP 1.1)                             -->
+    <!-- ============================================== -->
+    <binding name="StockUpdateSoapBinding" type="tns:StockUpdatePortType">
+        <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+        <operation name="StockUpdate">
+            <soap:operation soapAction="http://hospital-supply-chain.example.com/soap/stock/StockUpdate"/>
+            <input>
+                <soap:body use="literal"/>
+            </input>
+            <output>
+                <soap:body use="literal"/>
+            </output>
+            <fault name="StockUpdateFault">
+                <soap:fault name="StockUpdateFault" use="literal"/>
+            </fault>
+        </operation>
+    </binding>
+
+    <!-- ============================================== -->
+    <!-- Service                                        -->
+    <!-- ============================================== -->
+    <service name="StockUpdateService">
+        <documentation>
+            Hospital Supply Chain - Stock Update Service
+            SOA-based service for processing hospital inventory updates.
+            Integrates with the central order management system.
+        </documentation>
+        <port name="StockUpdatePort" binding="tns:StockUpdateSoapBinding">
+            <soap:address location="http://localhost:5000/StockUpdateService"/>
+        </port>
+    </service>
+
+</definitions>

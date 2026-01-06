@@ -1,0 +1,85 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://hospital-supply-chain.example.com/schemas/OrderCreationCommand.schema.json",
+  "title": "OrderCreationCommand",
+  "description": "Command to create a new supply order - used for Azure Event Hubs",
+  "type": "object",
+  "required": [
+    "commandId",
+    "commandType",
+    "orderId",
+    "hospitalId",
+    "productCode",
+    "orderQuantity",
+    "priority",
+    "estimatedDeliveryDate",
+    "timestamp"
+  ],
+  "properties": {
+    "commandId": {
+      "type": "string",
+      "description": "Unique identifier for this command (UUID format recommended)",
+      "pattern": "^[a-zA-Z0-9-]+$",
+      "minLength": 1,
+      "examples": ["cmd-550e8400-e29b-41d4-a716-446655440001"]
+    },
+    "commandType": {
+      "type": "string",
+      "const": "CreateOrder",
+      "description": "Type of command - must always be 'CreateOrder'"
+    },
+    "orderId": {
+      "type": "string",
+      "description": "Unique identifier for the order to be created",
+      "pattern": "^[a-zA-Z0-9-]+$",
+      "minLength": 1,
+      "examples": ["ORD-2026-001", "ORD-550e8400"]
+    },
+    "hospitalId": {
+      "type": "string",
+      "description": "Unique identifier for the hospital placing the order",
+      "pattern": "^[A-Z0-9-]+$",
+      "minLength": 1,
+      "examples": ["HOSP-001", "HOSP-ISTANBUL-01"]
+    },
+    "productCode": {
+      "type": "string",
+      "description": "Product/SKU code for the item being ordered",
+      "pattern": "^[A-Z0-9-]+$",
+      "minLength": 1,
+      "examples": ["MED-GLOVES-L", "SURG-MASK-N95"]
+    },
+    "orderQuantity": {
+      "type": "integer",
+      "description": "Quantity of units to order",
+      "minimum": 1,
+      "examples": [500, 1000, 250]
+    },
+    "priority": {
+      "type": "string",
+      "enum": ["URGENT", "HIGH", "NORMAL"],
+      "description": "Priority level of the order",
+      "examples": ["URGENT"]
+    },
+    "estimatedDeliveryDate": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO8601 formatted estimated delivery date",
+      "examples": ["2026-01-05T09:00:00.000Z"]
+    },
+    "warehouseId": {
+      "type": "string",
+      "description": "Warehouse to fulfill the order from",
+      "default": "CENTRAL-WAREHOUSE",
+      "pattern": "^[A-Z0-9-]+$",
+      "examples": ["CENTRAL-WAREHOUSE", "WAREHOUSE-EAST-01"]
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO8601 formatted timestamp when the command was created",
+      "examples": ["2026-01-03T14:35:00.000Z"]
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,77 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://hospital-supply-chain.example.com/schemas/InventoryLowEvent.schema.json",
+  "title": "InventoryLowEvent",
+  "description": "Event triggered when hospital inventory falls below threshold - used for Azure Event Hubs",
+  "type": "object",
+  "required": [
+    "eventId",
+    "eventType",
+    "hospitalId",
+    "productCode",
+    "currentStockUnits",
+    "dailyConsumptionUnits",
+    "daysOfSupply",
+    "threshold",
+    "timestamp"
+  ],
+  "properties": {
+    "eventId": {
+      "type": "string",
+      "description": "Unique identifier for this event (UUID format recommended)",
+      "pattern": "^[a-zA-Z0-9-]+$",
+      "minLength": 1,
+      "examples": ["evt-550e8400-e29b-41d4-a716-446655440000"]
+    },
+    "eventType": {
+      "type": "string",
+      "const": "InventoryLow",
+      "description": "Type of event - must always be 'InventoryLow'"
+    },
+    "hospitalId": {
+      "type": "string",
+      "description": "Unique identifier for the hospital",
+      "pattern": "^[A-Z0-9-]+$",
+      "minLength": 1,
+      "examples": ["HOSP-001", "HOSP-ISTANBUL-01"]
+    },
+    "productCode": {
+      "type": "string",
+      "description": "Product/SKU code for the inventory item",
+      "pattern": "^[A-Z0-9-]+$",
+      "minLength": 1,
+      "examples": ["MED-GLOVES-L", "SURG-MASK-N95"]
+    },
+    "currentStockUnits": {
+      "type": "integer",
+      "description": "Current stock quantity in units",
+      "minimum": 0,
+      "examples": [150, 50, 0]
+    },
+    "dailyConsumptionUnits": {
+      "type": "integer",
+      "description": "Average daily consumption in units",
+      "minimum": 0,
+      "examples": [25, 100]
+    },
+    "daysOfSupply": {
+      "type": "number",
+      "description": "Calculated days of supply remaining (currentStock / dailyConsumption)",
+      "minimum": 0,
+      "examples": [6.0, 2.5, 0.5]
+    },
+    "threshold": {
+      "type": "number",
+      "description": "The threshold value (in days) that triggered this event",
+      "minimum": 0,
+      "examples": [7.0, 14.0, 3.0]
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO8601 formatted timestamp when the event was generated",
+      "examples": ["2026-01-03T14:30:00.000Z"]
+    }
+  },
+  "additionalProperties": false
+}
