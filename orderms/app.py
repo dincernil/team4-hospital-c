@@ -5,6 +5,7 @@ import json
 from datetime import datetime
 import psycopg2
 from dotenv import load_dotenv
+import time
 
 load_dotenv()
 
@@ -42,8 +43,9 @@ def health():
     })
 
 @app.route('/receive-order', methods=['POST'])
+@app.route('/receive-order', methods=['POST'])
 def receive_order():
-    """Simulated order receiver"""
+    """Simulated order receiver with duplicate detection"""
     try:
         data = request.get_json()
         
@@ -57,7 +59,39 @@ def receive_order():
         
         cursor = conn.cursor()
         
-        # Order kaydet
+        # Duplicate kontrolü - orderId
+        cursor.execute("""
+            SELECT order_id FROM orders WHERE order_id = %s
+        """, (data.get('orderId'),))
+        
+        if cursor.fetchone():
+            cursor.close()
+            conn.close()
+            print(f"⚠️  Duplicate order detected: {data.get('orderId')}")
+            return jsonify({
+                'success': True,
+                'orderId': data.get('orderId'),
+                'message': 'Order already exists (duplicate ignored)',
+                'duplicate': True
+            }), 200
+        
+        # Duplicate kontrolü - commandId
+        cursor.execute("""
+            SELECT command_id FROM orders WHERE command_id = %s
+        """, (data.get('commandId'),))
+        
+        if cursor.fetchone():
+            cursor.close()
+            conn.close()
+            print(f"⚠️  Duplicate command detected: {data.get('commandId')}")
+            return jsonify({
+                'success': True,
+                'commandId': data.get('commandId'),
+                'message': 'Command already processed (duplicate ignored)',
+                'duplicate': True
+            }), 200
+        
+        # Order kaydet (yeni kayıt)
         cursor.execute("""
             INSERT INTO orders 
             (order_id, command_id, hospital_id, product_code, order_quantity, 
@@ -91,13 +125,14 @@ def receive_order():
         return jsonify({
             'success': True,
             'orderId': data.get('orderId'),
-            'message': 'Order received successfully'
+            'message': 'Order received successfully',
+            'duplicate': False
         })
         
     except Exception as e:
+        print(f"❌ Error: {e}")
         return jsonify({'error': str(e)}), 500
-
-@app.route('/', methods=['GET'])
+        
 def home():
     return jsonify({
         'service': 'OrderMS - Event Consumer',

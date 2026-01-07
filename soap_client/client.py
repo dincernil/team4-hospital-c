@@ -5,6 +5,7 @@ import requests
 import psycopg2
 from dotenv import load_dotenv
 from xml.etree import ElementTree as ET
+import time
 
 # .env dosyasını yükle
 load_dotenv()
@@ -138,95 +139,104 @@ def parse_soap_response(xml_response):
             'orderId': None
         }
 
-def send_stock_update(stock_data):
-    """SOAP ile stok güncelleme mesajı gönder"""
+def send_stock_update(stock_data, max_retries=3):
+    """SOAP ile stok güncelleme mesajı gönder (retry mekanizmalı)"""
     
     print("\n" + "="*60)
     print("📤 SOAP Request Gönderiliyor...")
     print("="*60)
     
-    start_time = datetime.now()
+    retry_delays = [5, 15, 30]
     
-    try:
-        # SOAP envelope oluştur
-        soap_request = create_soap_envelope(stock_data)
+    for attempt in range(1, max_retries + 1):
+        start_time = datetime.now()
         
-        print(f"🏥 Hospital ID: {HOSPITAL_ID}")
-        print(f"📦 Product: {PRODUCT_CODE}")
-        print(f"📊 Current Stock: {stock_data['currentStockUnits']} units")
-        print(f"📉 Daily Consumption: {stock_data['dailyConsumptionUnits']} units")
-        print(f"⏱️  Days of Supply: {stock_data['daysOfSupply']:.2f} days")
-        print(f"🔗 Endpoint: {SOAP_URL}")
-        
-        # SOAP request gönder
-        headers = {
-            'Content-Type': 'text/xml; charset=utf-8',
-            'SOAPAction': 'http://hospital-supply-chain.example.com/soap/stock/StockUpdate'
-        }
-        
-        response = requests.post(
-            SOAP_URL,
-            data=soap_request,
-            headers=headers,
-            timeout=30
-        )
-        
-        # Latency hesapla
-        end_time = datetime.now()
-        latency_ms = int((end_time - start_time).total_seconds() * 1000)
-        
-        # Response'u kontrol et
-        if response.status_code == 200:
-            parsed_response = parse_soap_response(response.text)
+        try:
+            soap_request = create_soap_envelope(stock_data)
             
-            print(f"\n✅ Response Alındı (Latency: {latency_ms}ms)")
-            print("-"*60)
-            print(f"Success: {parsed_response['success']}")
-            print(f"Message: {parsed_response['message']}")
-            print(f"Order Triggered: {parsed_response['orderTriggered']}")
+            if attempt == 1:
+                print(f"🏥 Hospital ID: {HOSPITAL_ID}")
+                print(f"📦 Product: {PRODUCT_CODE}")
+                print(f"📊 Current Stock: {stock_data['currentStockUnits']} units")
+                print(f"📉 Daily Consumption: {stock_data['dailyConsumptionUnits']} units")
+                print(f"⏱️  Days of Supply: {stock_data['daysOfSupply']:.2f} days")
+                print(f"🔗 Endpoint: {SOAP_URL}")
+            else:
+                print(f"\n🔄 Retry #{attempt}/{max_retries}")
             
-            if parsed_response.get('orderId'):
-                print(f"Order ID: {parsed_response['orderId']}")
+            headers = {
+                'Content-Type': 'text/xml; charset=utf-8',
+                'SOAPAction': 'http://hospital-supply-chain.example.com/soap/stock/StockUpdate'
+            }
             
-            # Log'a yaz
-            log_event(
-                event_type='STOCK_UPDATE_SENT',
-                status='SUCCESS',
-                payload=str(stock_data),
-                latency_ms=latency_ms
+            response = requests.post(
+                SOAP_URL,
+                data=soap_request,
+                headers=headers,
+                timeout=30
             )
             
-            print("="*60)
+            end_time = datetime.now()
+            latency_ms = int((end_time - start_time).total_seconds() * 1000)
             
-            return {
-                'success': True,
-                'response': parsed_response,
-                'latency_ms': latency_ms
-            }
-        else:
-            raise Exception(f"HTTP {response.status_code}: {response.text}")
-        
-    except Exception as e:
-        end_time = datetime.now()
-        latency_ms = int((end_time - start_time).total_seconds() * 1000)
-        
-        print(f"\n❌ SOAP Hatası: {e}")
-        print("="*60)
-        
-        # Log'a yaz
-        log_event(
-            event_type='STOCK_UPDATE_SENT',
-            status='FAILURE',
-            payload=str(stock_data),
-            error_message=str(e),
-            latency_ms=latency_ms
-        )
-        
-        return {
-            'success': False,
-            'error': str(e),
-            'latency_ms': latency_ms
-        }
+            if response.status_code == 200:
+                parsed_response = parse_soap_response(response.text)
+                
+                print(f"\n✅ Response Alındı (Latency: {latency_ms}ms, Attempt: {attempt})")
+                print("-"*60)
+                print(f"Success: {parsed_response['success']}")
+                print(f"Message: {parsed_response['message']}")
+                print(f"Order Triggered: {parsed_response['orderTriggered']}")
+                
+                if parsed_response.get('orderId'):
+                    print(f"Order ID: {parsed_response['orderId']}")
+                
+                log_event(
+                    event_type='STOCK_UPDATE_SENT',
+                    status='SUCCESS',
+                    payload=str(stock_data),
+                    latency_ms=latency_ms
+                )
+                
+                print("="*60)
+                
+                return {
+                    'success': True,
+                    'response': parsed_response,
+                    'latency_ms': latency_ms,
+                    'attempts': attempt
+                }
+            else:
+                raise Exception(f"HTTP {response.status_code}: {response.text}")
+            
+        except Exception as e:
+            end_time = datetime.now()
+            latency_ms = int((end_time - start_time).total_seconds() * 1000)
+            
+            print(f"\n❌ SOAP Hatası (Attempt {attempt}/{max_retries}): {e}")
+            
+            if attempt < max_retries:
+                wait_time = retry_delays[attempt - 1]
+                print(f"⏳ {wait_time} saniye bekleniyor...")
+                time.sleep(wait_time)
+            else:
+                print("="*60)
+                print("❌ Tüm denemeler başarısız oldu!")
+                
+                log_event(
+                    event_type='STOCK_UPDATE_SENT',
+                    status='FAILURE',
+                    payload=str(stock_data),
+                    error_message=str(e),
+                    latency_ms=latency_ms
+                )
+                
+                return {
+                    'success': False,
+                    'error': str(e),
+                    'latency_ms': latency_ms,
+                    'attempts': attempt
+                }
 
 def main():
     """Ana fonksiyon"""

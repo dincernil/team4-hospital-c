@@ -44,6 +44,8 @@ def health():
 @app.route('/publish-event', methods=['POST'])
 def publish_event():
     """Simulated event publisher"""
+    start_time = datetime.now()
+    
     try:
         conn = get_db_connection()
         if not conn:
@@ -72,22 +74,27 @@ def publish_event():
             'timestamp': datetime.now().isoformat()
         }
         
-        # Log event
+        # Latency hesapla
+        end_time = datetime.now()
+        latency_ms = int((end_time - start_time).total_seconds() * 1000)
+        
+        # Log event (latency ile)
         cursor.execute("""
             INSERT INTO event_log 
-            (event_type, direction, architecture, payload, status)
-            VALUES (%s, %s, %s, %s, %s)
-        """, ('INVENTORY_LOW_EVENT', 'OUTGOING', 'SERVERLESS', json.dumps(event), 'SUCCESS'))
+            (event_type, direction, architecture, payload, status, latency_ms)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """, ('INVENTORY_LOW_EVENT', 'OUTGOING', 'SERVERLESS', json.dumps(event), 'SUCCESS', latency_ms))
         
         conn.commit()
         cursor.close()
         conn.close()
         
-        print(f"✅ Event published: {event['eventId']}")
+        print(f"✅ Event published: {event['eventId']} (Latency: {latency_ms}ms)")
         
         return jsonify({
             'success': True,
-            'event': event
+            'event': event,
+            'latency_ms': latency_ms
         })
         
     except Exception as e:
