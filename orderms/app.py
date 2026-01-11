@@ -29,7 +29,7 @@ def get_db_connection():
             password=DB_PASSWORD
         )
     except Exception as e:
-        print(f"❌ DB Error: {e}")
+        print(f" DB Error: {e}")
         return None
 
 @app.route('/health', methods=['GET'])
@@ -49,7 +49,7 @@ def receive_order():
     try:
         data = request.get_json()
         
-        # Hospital ID kontrolü
+    
         if data.get('hospitalId') != HOSPITAL_ID:
             return jsonify({'error': 'Wrong hospital ID'}), 400
         
@@ -74,8 +74,7 @@ def receive_order():
                 'message': 'Order already exists (duplicate ignored)',
                 'duplicate': True
             }), 200
-        
-        # Duplicate kontrolü - commandId
+    
         cursor.execute("""
             SELECT command_id FROM orders WHERE command_id = %s
         """, (data.get('commandId'),))
@@ -91,7 +90,7 @@ def receive_order():
                 'duplicate': True
             }), 200
         
-        # Order kaydet (yeni kayıt)
+        
         cursor.execute("""
             INSERT INTO orders 
             (order_id, command_id, hospital_id, product_code, order_quantity, 
@@ -109,7 +108,7 @@ def receive_order():
             data.get('warehouseId')
         ))
         
-        # Event log
+    
         cursor.execute("""
             INSERT INTO event_log 
             (event_type, direction, architecture, payload, status)
@@ -142,4 +141,4 @@ def home():
 
 if __name__ == '__main__':
     print(f"🚀 OrderMS starting for {HOSPITAL_ID}...")
-    app.run(host='0.0.0.0', port=8082, debug=True)
+    app.run(host='0.0.0.0', port=8084, debug=True)

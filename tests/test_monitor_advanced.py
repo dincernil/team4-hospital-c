@@ -15,7 +15,7 @@ from stock_monitor.monitor import (
 # ============ UPDATE STOCK TESTS ============
 def test_update_stock_success():
     """Stok güncellemesi başarılı mı?"""
-    result = update_stock(0)  # 0 tüketim
+    result = update_stock(0)  
     assert result == True
 
 def test_update_stock_with_consumption():
@@ -32,7 +32,7 @@ def test_days_of_supply_calculation():
     if stock['current_stock'] > 0 and stock['daily_consumption'] > 0:
         expected = stock['current_stock'] / stock['daily_consumption']
         actual = float(stock['days_of_supply'])
-        # Küçük tolerans
+
         assert abs(expected - actual) < 0.5
 
 # ============ CONSUMPTION PATTERNS TESTS ============
@@ -41,11 +41,10 @@ def test_simulate_consumption_range():
     base = 79
     results = [simulate_daily_consumption(base) for _ in range(10)]
     
-    # Hepsi pozitif olmalı
+    
     for r in results:
         assert r >= 0
     
-    # Çoğu makul aralıkta (spike hariç)
     reasonable = [r for r in results if 60 < r < 120]
     assert len(reasonable) >= 7
 
@@ -111,28 +110,27 @@ def test_get_current_stock_consistency():
     stock1 = get_current_stock()
     stock2 = get_current_stock()
     
-    # Aynı anda iki kez çağırınca aynı sonuç vermeli (tüketim yoksa)
-    # (Update yapılmazsa tutarlı olmalı)
+ 
     assert stock1['daily_consumption'] == stock2['daily_consumption']
 
 def test_hospital_id_constant():
     """Hospital ID doğru mu?"""
     stock = get_current_stock()
-    # Hospital-C için daily consumption 79 olmalı
+
     assert stock['daily_consumption'] == 79
 
 # ============ INTEGRATION TESTS ============
 def test_full_monitoring_cycle():
     """Tam monitoring döngüsü"""
-    # 1. Stok al
+
     stock = get_current_stock()
     assert stock is not None
     
-    # 2. Tüketim simüle et
+
     consumption = simulate_daily_consumption(stock['daily_consumption'])
     assert consumption >= 0
     
-    # 3. Threshold kontrol et
+
     breach, data = check_threshold_breach()
     assert isinstance(breach, bool)
 

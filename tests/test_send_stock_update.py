@@ -12,7 +12,7 @@ from soap_client.client import send_stock_update, create_soap_envelope
 @patch('soap_client.client.requests.post')
 def test_send_stock_update_success(mock_post):
     """send_stock_update başarılı çalışıyor mu?"""
-    # Mock response
+
     mock_response = MagicMock()
     mock_response.status_code = 200
     mock_response.text = '''<?xml version="1.0"?>
@@ -28,7 +28,7 @@ def test_send_stock_update_success(mock_post):
     </soap:Envelope>'''
     mock_post.return_value = mock_response
     
-    # Test
+  
     stock_data = {
         'currentStockUnits': 50,
         'dailyConsumptionUnits': 79,
@@ -64,14 +64,14 @@ def test_send_stock_update_no_order(mock_post):
     
     result = send_stock_update(stock_data)
     assert result is not None
-    # Result None dönebilir, kontrol et
+
     if result and 'orderTriggered' in result:
         assert result['orderTriggered'] == False
 
 @patch('soap_client.client.requests.post')
 def test_send_stock_update_retry(mock_post):
     """send_stock_update retry mekanizması"""
-    # İlk 2 deneme başarısız, 3. başarılı
+   
     mock_response_fail = MagicMock()
     mock_response_fail.status_code = 500
     
@@ -88,7 +88,7 @@ def test_send_stock_update_retry(mock_post):
         </soap:Body>
     </soap:Envelope>'''
     
-    # İlk 2 fail, sonra success
+  
     mock_post.side_effect = [
         mock_response_fail,
         mock_response_fail,
@@ -114,10 +114,9 @@ def test_send_stock_update_timeout(mock_post):
         'dailyConsumptionUnits': 79,
         'daysOfSupply': 0.63
     }
-    
-    # Hata olsa bile fonksiyon bitişmeli (retry ile)
+
     result = send_stock_update(stock_data, max_retries=1)
-    # Fonksiyon çalıştı demektir
+
 
 @patch('soap_client.client.requests.post')
 def test_send_stock_update_creates_envelope(mock_post):
@@ -144,10 +143,10 @@ def test_send_stock_update_creates_envelope(mock_post):
     
     result = send_stock_update(stock_data)
     
-    # Mock çağrıldı mı kontrol et
+  
     assert mock_post.called == True
     
-    # Gönderilen data kontrol et
+ 
     call_args = mock_post.call_args
     sent_data = call_args[1]['data']
     assert 'Hospital-C' in sent_data

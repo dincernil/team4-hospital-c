@@ -110,4 +110,4 @@ def home():
 
 if __name__ == '__main__':
     print(f"🚀 StockMS starting for {HOSPITAL_ID}...")
-    app.run(host='0.0.0.0', port=8081, debug=True)
+    app.run(host='0.0.0.0', port=8086, debug=True)

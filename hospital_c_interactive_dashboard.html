@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hospital-C Supply Chain Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+            color: #e2e8f0;
+            overflow-x: hidden;
+        }
+        
+        .mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        /* Animated background grid */
+        .grid-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(148, 163, 184, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(148, 163, 184, 0.05) 1px, transparent 1px);
+            background-size: 40px 40px;
+            z-index: 0;
+            animation: gridPulse 20s ease-in-out infinite;
+        }
+        
+        @keyframes gridPulse {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.6; }
+        }
+        
+        /* Glowing orbs */
+        .orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.15;
+            z-index: 0;
+            animation: float 20s ease-in-out infinite;
+        }
+        
+        .orb-1 {
+            width: 600px;
+            height: 600px;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            top: -200px;
+            left: -200px;
+        }
+        
+        .orb-2 {
+            width: 500px;
+            height: 500px;
+            background: linear-gradient(135deg, #ec4899, #f59e0b);
+            bottom: -150px;
+            right: -150px;
+            animation-delay: -10s;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(30px, -30px) scale(1.1); }
+            66% { transform: translate(-30px, 30px) scale(0.9); }
+        }
+        
+        /* Cards */
+        .glass-card {
+            background: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 16px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .glass-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.5s;
+        }
+        
+        .glass-card:hover::before {
+            left: 100%;
+        }
+        
+        .glass-card:hover {
+            border-color: rgba(59, 130, 246, 0.5);
+            transform: translateY(-2px);
+        }
+        
+        /* Buttons */
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+            box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 30px rgba(59, 130, 246, 0.6);
+        }
+        
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            box-shadow: 0 4px 20px rgba(16, 185, 129, 0.4);
+        }
+        
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 30px rgba(16, 185, 129, 0.6);
+        }
+        
+        .btn-warning {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+            box-shadow: 0 4px 20px rgba(245, 158, 11, 0.4);
+        }
+        
+        .btn-warning:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 30px rgba(245, 158, 11, 0.6);
+        }
+        
+        /* Status indicators */
+        .status-ok {
+            background: linear-gradient(135deg, #10b981, #059669);
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
+        }
+        
+        .status-warning {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            box-shadow: 0 0 20px rgba(245, 158, 11, 0.5);
+        }
+        
+        .status-critical {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.5);
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.05); }
+        }
+        
+        /* Metrics animation */
+        .metric-value {
+            font-size: 3rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #60a5fa, #3b82f6);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: shimmer 3s ease-in-out infinite;
+        }
+        
+        @keyframes shimmer {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+        
+        /* Progress bars */
+        .progress-bar {
+            height: 8px;
+            background: rgba(148, 163, 184, 0.2);
+            border-radius: 999px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+            border-radius: 999px;
+            transition: width 1s ease-out;
+            position: relative;
+        }
+        
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            animation: progressShine 2s ease-in-out infinite;
+        }
+        
+        @keyframes progressShine {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        
+        /* Live indicator */
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background: #10b981;
+            border-radius: 50%;
+            animation: livePulse 2s ease-in-out infinite;
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.8);
+        }
+        
+        @keyframes livePulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.5); opacity: 0.7; }
+        }
+        
+        /* Input fields */
+        .input-field {
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid rgba(148, 163, 184, 0.3);
+            border-radius: 0.5rem;
+            padding: 0.75rem 1rem;
+            color: #e2e8f0;
+            font-size: 0.875rem;
+            transition: all 0.3s ease;
+        }
+        
+        .input-field:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        /* Alert notification */
+        .alert {
+            padding: 1rem 1.5rem;
+            border-radius: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            animation: slideInRight 0.5s ease-out;
+        }
+        
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        .alert-success {
+            background: rgba(16, 185, 129, 0.2);
+            border: 1px solid rgba(16, 185, 129, 0.5);
+        }
+        
+        .alert-warning {
+            background: rgba(245, 158, 11, 0.2);
+            border: 1px solid rgba(245, 158, 11, 0.5);
+        }
+        
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal.active {
+            display: flex;
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .modal-content {
+            background: rgba(30, 41, 59, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(148, 163, 184, 0.3);
+            border-radius: 1rem;
+            padding: 2rem;
+            max-width: 500px;
+            width: 90%;
+            animation: slideUp 0.3s ease-out;
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateY(50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        /* Slider */
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: rgba(148, 163, 184, 0.2);
+            outline: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+        }
+        
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <!-- Background elements -->
+    <div class="grid-bg"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    
+    <!-- Notification Area -->
+    <div id="notificationArea" class="fixed top-6 right-6 z-50 space-y-3" style="max-width: 400px;"></div>
+    
+    <!-- Main container -->
+    <div class="relative z-10 min-h-screen p-6">
+        <!-- Header -->
+        <div class="max-w-7xl mx-auto mb-8">
+            <div class="glass-card p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="flex items-center gap-3 mb-2">
+                            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                                <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h1 class="text-3xl font-bold">Hospital-C Supply Management</h1>
+                                <p class="text-slate-400 text-sm">Real-time Inventory Control & Monitoring System</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <div class="flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-800/50">
+                            <div class="live-dot"></div>
+                            <span class="text-sm font-medium mono">LIVE</span>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-sm text-slate-400 mono">Last Updated</div>
+                            <div class="text-lg font-semibold mono" id="currentTime">--:--:--</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Grid -->
+        <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Left Column -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Stock Management Controls -->
+                <div class="glass-card p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-xl font-bold flex items-center gap-2">
+                            <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
+                            </svg>
+                            Stock Management Controls
+                        </h2>
+                        <div class="flex items-center gap-2">
+                            <div class="w-3 h-3 rounded-full status-critical" id="statusIndicator"></div>
+                            <span class="text-sm font-semibold text-red-400 mono" id="statusText">CRITICAL</span>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <!-- Manual Stock Adjustment -->
+                        <div class="p-4 rounded-xl bg-slate-800/50">
+                            <h3 class="text-sm font-semibold mb-3 flex items-center gap-2">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                                </svg>
+                                Manual Stock Adjustment
+                            </h3>
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="text-xs text-slate-400 mb-1 block">Add/Remove Units</label>
+                                    <input type="number" id="stockAdjustment" class="input-field w-full mono" placeholder="Enter units (+ or -)" value="0">
+                                </div>
+                                <button onclick="adjustStock()" class="btn btn-primary w-full">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                                    </svg>
+                                    Update Stock
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Threshold Configuration -->
+                        <div class="p-4 rounded-xl bg-slate-800/50">
+                            <h3 class="text-sm font-semibold mb-3 flex items-center gap-2">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                </svg>
+                                Threshold Configuration
+                            </h3>
+                            <div class="space-y-3">
+                                <div>
+                                    <div class="flex justify-between mb-2">
+                                        <label class="text-xs text-slate-400">Alert Threshold (days)</label>
+                                        <span class="text-sm font-bold mono text-blue-400" id="thresholdValue">2.0</span>
+                                    </div>
+                                    <input type="range" id="thresholdSlider" min="1.0" max="5.0" step="0.1" value="2.0" onchange="updateThreshold(this.value)">
+                                </div>
+                                <div class="text-xs text-slate-400">
+                                    <div class="flex items-center gap-2">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                        </svg>
+                                        Orders trigger when supply drops below this threshold
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Quick Actions -->
+                    <div class="grid grid-cols-3 gap-3">
+                        <button onclick="placeManualOrder()" class="btn btn-success">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
+                            </svg>
+                            Place Order
+                        </button>
+                        <button onclick="simulateDelivery()" class="btn btn-primary">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                            </svg>
+                            Simulate Delivery
+                        </button>
+                        <button onclick="resetSystem()" class="btn btn-warning">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                            </svg>
+                            Reset System
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Current Stock Status -->
+                <div class="glass-card p-6">
+                    <h2 class="text-xl font-bold mb-6 flex items-center gap-2">
+                        <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                        </svg>
+                        Current Inventory Status
+                    </h2>
+                    
+                    <div class="grid grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <div class="text-sm text-slate-400 mb-2">Product</div>
+                            <div class="text-lg font-semibold">Physiological Saline 500ML</div>
+                        </div>
+                        <div>
+                            <div class="text-sm text-slate-400 mb-2">Hospital ID</div>
+                            <div class="text-lg font-semibold mono">Hospital-C</div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-3 gap-4">
+                        <div class="text-center p-4 rounded-xl bg-slate-800/50">
+                            <div class="text-sm text-slate-400 mb-1">Current Stock</div>
+                            <div class="metric-value" id="currentStock">115</div>
+                            <div class="text-sm text-slate-400 mono">units</div>
+                        </div>
+                        <div class="text-center p-4 rounded-xl bg-slate-800/50">
+                            <div class="text-sm text-slate-400 mb-1">Daily Usage</div>
+                            <div class="metric-value" id="dailyUsage">79</div>
+                            <div class="text-sm text-slate-400 mono">units/day</div>
+                        </div>
+                        <div class="text-center p-4 rounded-xl bg-slate-800/50">
+                            <div class="text-sm text-slate-400 mb-1">Days of Supply</div>
+                            <div class="metric-value" id="daysSupply" style="background: linear-gradient(135deg, #ef4444, #dc2626); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">1.46</div>
+                            <div class="text-sm text-slate-400 mono">days</div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-sm text-slate-400">Threshold: <span id="displayThreshold">2.0</span> days</span>
+                            <span class="text-sm font-semibold mono" id="stockPercentage" style="color: #ef4444;">73%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="stockProgress" style="width: 73%; background: linear-gradient(90deg, #ef4444, #dc2626);"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Architecture Performance Comparison -->
+                <div class="glass-card p-6">
+                    <h2 class="text-xl font-bold mb-6 flex items-center gap-2">
+                        <svg class="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                        </svg>
+                        Architecture Performance
+                    </h2>
+                    
+                    <div class="space-y-6">
+                        <!-- SOA (SOAP) -->
+                        <div>
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-3 h-3 rounded-full" style="background: linear-gradient(135deg, #f59e0b, #ef4444);"></div>
+                                    <span class="font-semibold text-sm">SOA (SOAP)</span>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-2xl font-bold mono" style="color: #f59e0b;" id="perfSoapLatency">1002ms</div>
+                                    <div class="text-xs text-slate-400">Average Latency</div>
+                                </div>
+                            </div>
+                            <div class="h-10 bg-slate-800/50 rounded-lg overflow-hidden relative">
+                                <div class="arch-bar arch-bar-soap h-full" style="width: 100%; background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);"></div>
+                                <div class="absolute inset-0 flex items-center justify-center">
+                                    <span class="text-xs font-semibold text-white/90 mono">Synchronous • Blocking • Team 1 Azure</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Serverless (Event Hub) -->
+                        <div>
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-3 h-3 rounded-full" style="background: linear-gradient(135deg, #10b981, #3b82f6);"></div>
+                                    <span class="font-semibold text-sm">Serverless (Event Hub)</span>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-2xl font-bold mono" style="color: #10b981;" id="perfServerlessLatency">14ms</div>
+                                    <div class="text-xs text-slate-400">Average Latency</div>
+                                </div>
+                            </div>
+                            <div class="h-10 bg-slate-800/50 rounded-lg overflow-hidden relative">
+                                <div class="arch-bar arch-bar-serverless h-full" style="width: 1.4%; background: linear-gradient(135deg, #10b981 0%, #3b82f6 100%); transition: width 1s ease-out;"></div>
+                                <div class="absolute inset-0 flex items-center justify-center">
+                                    <span class="text-xs font-semibold text-white/90 mono">Asynchronous • Non-blocking • Azure Event Hub</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6 p-4 rounded-xl" style="background: linear-gradient(to right, rgba(16, 185, 129, 0.1), rgba(59, 130, 246, 0.1)); border: 1px solid rgba(16, 185, 129, 0.3);">
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-slate-300">Performance Improvement</span>
+                            <div class="flex items-center gap-2">
+                                <span class="text-3xl font-bold mono" style="color: #10b981;" id="perfRatio">49.3x</span>
+                                <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- System Statistics -->
+                <div class="glass-card p-6">
+                    <h2 class="text-xl font-bold mb-6 flex items-center gap-2">
+                        <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        System Statistics
+                    </h2>
+                    
+                    <div class="grid grid-cols-4 gap-4">
+                        <div class="stat-item text-center p-4 rounded-xl bg-slate-800/50">
+                            <div class="text-3xl font-bold mono mb-1" style="color: #60a5fa;" id="statTotalEvents">166</div>
+                            <div class="text-xs text-slate-400">Total Events</div>
+                        </div>
+                        <div class="stat-item text-center p-4 rounded-xl bg-slate-800/50" style="animation-delay: 0.1s">
+                            <div class="text-3xl font-bold mono mb-1" style="color: #10b981;">100%</div>
+                            <div class="text-xs text-slate-400">Success Rate</div>
+                        </div>
+                        <div class="stat-item text-center p-4 rounded-xl bg-slate-800/50" style="animation-delay: 0.2s">
+                            <div class="text-3xl font-bold mono mb-1" style="color: #a78bfa;">77</div>
+                            <div class="text-xs text-slate-400">Unit Tests</div>
+                        </div>
+                        <div class="stat-item text-center p-4 rounded-xl bg-slate-800/50" style="animation-delay: 0.3s">
+                            <div class="text-3xl font-bold mono mb-1" style="color: #fb923c;">71%</div>
+                            <div class="text-xs text-slate-400">Coverage</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Order History -->
+                <div class="glass-card p-6">
+                    <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+                        <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                        </svg>
+                        Order History
+                    </h2>
+                    
+                    <div class="space-y-2" id="orderHistory">
+                        <div class="p-3 rounded-lg bg-slate-800/50 flex items-center justify-between">
+                            <div>
+                                <div class="text-sm font-semibold mono text-blue-400">ORDER-2026-001</div>
+                                <div class="text-xs text-slate-400">Placed: 10:15:23 | Qty: 200 units</div>
+                            </div>
+                            <span class="text-xs px-3 py-1 rounded-full bg-yellow-500/20 text-yellow-400 mono">PENDING</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right Column -->
+            <div class="space-y-6">
+                <!-- Services Status -->
+                <div class="glass-card p-6">
+                    <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+                        <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"/>
+                        </svg>
+                        System Services
+                    </h2>
+                    
+                    <div class="space-y-3">
+                        <div class="p-3 rounded-lg bg-slate-800/50 flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="w-2 h-2 rounded-full status-ok"></div>
+                                <span class="text-sm font-medium">PostgreSQL DB</span>
+                            </div>
+                            <span class="text-xs text-green-400 mono">HEALTHY</span>
+                        </div>
+                        <div class="p-3 rounded-lg bg-slate-800/50 flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="w-2 h-2 rounded-full status-ok"></div>
+                                <span class="text-sm font-medium">StockMS</span>
+                            </div>
+                            <span class="text-xs text-green-400 mono">HEALTHY</span>
+                        </div>
+                        <div class="p-3 rounded-lg bg-slate-800/50 flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="w-2 h-2 rounded-full status-ok"></div>
+                                <span class="text-sm font-medium">OrderMS</span>
+                            </div>
+                            <span class="text-xs text-green-400 mono">HEALTHY</span>
+                        </div>
+                        <div class="p-3 rounded-lg bg-slate-800/50 flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="w-2 h-2 rounded-full status-ok"></div>
+                                <span class="text-sm font-medium">Monitor Script</span>
+                            </div>
+                            <span class="text-xs text-green-400 mono">RUNNING</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Recent Activity -->
+                <div class="glass-card p-6">
+                    <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+                        <svg class="w-6 h-6 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        Recent Activity
+                    </h2>
+                    
+                    <div class="space-y-2" id="activityLog">
+                        <!-- Activities will be added here by JavaScript -->
+                    </div>
+                </div>
+                
+                <!-- System Statistics -->
+                <div class="glass-card p-6">
+                    <h2 class="text-xl font-bold mb-4">System Stats</h2>
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-slate-400">Total Events</span>
+                            <span class="text-lg font-bold mono text-blue-400" id="totalEvents">149</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-slate-400">Success Rate</span>
+                            <span class="text-lg font-bold mono text-green-400">100%</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-slate-400">Total Orders</span>
+                            <span class="text-lg font-bold mono text-purple-400" id="totalOrders">1</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-slate-400">Avg Response</span>
+                            <span class="text-lg font-bold mono text-orange-400">11ms</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Team Info -->
+                <div class="glass-card p-6">
+                    <h2 class="text-xl font-bold mb-4">Team 4</h2>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex items-center gap-2">
+                            <div class="w-2 h-2 rounded-full bg-blue-400"></div>
+                            <span class="text-slate-300">Nilsu Ağca</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="w-2 h-2 rounded-full bg-purple-400"></div>
+                            <span class="text-slate-300">Nil Dinçer</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="w-2 h-2 rounded-full bg-green-400"></div>
+                            <span class="text-slate-300">Yusuf Hüriyetoğlu</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="w-2 h-2 rounded-full bg-orange-400"></div>
+                            <span class="text-slate-300">Abdullah Kiraz</span>
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-4 border-t border-slate-700">
+                        <div class="text-xs text-slate-400">COMP464 - Web Programming</div>
+                        <div class="text-xs text-slate-400 mono">January 10, 2026</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // System state
+        let currentStock = 115;
+        let dailyUsage = 79;
+        let threshold = 2.0;
+        let orderCounter = 1;
+        let eventCounter = 166;
+        
+        // Update current time
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('currentTime').textContent = now.toLocaleTimeString('en-US', { hour12: false });
+        }
+        updateTime();
+        setInterval(updateTime, 1000);
+        
+        // Update performance metrics
+        function updatePerformanceMetrics() {
+            const soapLatency = Math.floor(Math.random() * 200) + 900; // 900-1100ms
+            const serverlessLatency = Math.floor(Math.random() * 20) + 5; // 5-25ms
+            const ratio = (soapLatency / serverlessLatency).toFixed(1);
+            
+            document.getElementById('perfSoapLatency').textContent = soapLatency + 'ms';
+            document.getElementById('perfServerlessLatency').textContent = serverlessLatency + 'ms';
+            document.getElementById('perfRatio').textContent = ratio + 'x';
+            
+            // Update stat events counter
+            document.getElementById('statTotalEvents').textContent = eventCounter;
+        }
+        
+        // Initial performance update
+        updatePerformanceMetrics();
+        
+        // Calculate and update stock metrics
+        function updateStockMetrics() {
+            const daysSupply = (currentStock / dailyUsage).toFixed(2);
+            const percentage = Math.min(100, Math.floor((daysSupply / threshold) * 100));
+            
+            document.getElementById('currentStock').textContent = currentStock;
+            document.getElementById('daysSupply').textContent = daysSupply;
+            document.getElementById('stockPercentage').textContent = percentage + '%';
+            document.getElementById('stockProgress').style.width = percentage + '%';
+            
+            // Update status
+            const statusIndicator = document.getElementById('statusIndicator');
+            const statusText = document.getElementById('statusText');
+            const daysSupplyElement = document.getElementById('daysSupply');
+            
+            if (daysSupply < threshold) {
+                statusIndicator.className = 'w-3 h-3 rounded-full status-critical';
+                statusText.textContent = 'CRITICAL';
+                statusText.className = 'text-sm font-semibold text-red-400 mono';
+                document.getElementById('stockProgress').style.background = 'linear-gradient(90deg, #ef4444, #dc2626)';
+                daysSupplyElement.style.background = 'linear-gradient(135deg, #ef4444, #dc2626)';
+                daysSupplyElement.style.webkitBackgroundClip = 'text';
+                daysSupplyElement.style.webkitTextFillColor = 'transparent';
+            } else if (daysSupply < threshold * 1.5) {
+                statusIndicator.className = 'w-3 h-3 rounded-full status-warning';
+                statusText.textContent = 'WARNING';
+                statusText.className = 'text-sm font-semibold text-orange-400 mono';
+                document.getElementById('stockProgress').style.background = 'linear-gradient(90deg, #f59e0b, #d97706)';
+                daysSupplyElement.style.background = 'linear-gradient(135deg, #f59e0b, #d97706)';
+                daysSupplyElement.style.webkitBackgroundClip = 'text';
+                daysSupplyElement.style.webkitTextFillColor = 'transparent';
+            } else {
+                statusIndicator.className = 'w-3 h-3 rounded-full status-ok';
+                statusText.textContent = 'HEALTHY';
+                statusText.className = 'text-sm font-semibold text-green-400 mono';
+                document.getElementById('stockProgress').style.background = 'linear-gradient(90deg, #10b981, #059669)';
+                daysSupplyElement.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+                daysSupplyElement.style.webkitBackgroundClip = 'text';
+                daysSupplyElement.style.webkitTextFillColor = 'transparent';
+            }
+        }
+        
+        // Add activity log entry
+        function addActivity(message, type = 'info') {
+            const activityLog = document.getElementById('activityLog');
+            const time = new Date().toLocaleTimeString('en-US', { hour12: false });
+            
+            const iconColors = {
+                'info': 'text-blue-400',
+                'success': 'text-green-400',
+                'warning': 'text-orange-400',
+                'error': 'text-red-400'
+            };
+            
+            const activityHtml = `
+                <div class="event-item p-3 rounded-lg bg-slate-800/50">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-xs ${iconColors[type]} font-semibold mono">${type.toUpperCase()}</span>
+                        <span class="text-xs text-slate-400 mono">${time}</span>
+                    </div>
+                    <div class="text-sm">${message}</div>
+                </div>
+            `;
+            
+            activityLog.insertAdjacentHTML('afterbegin', activityHtml);
+            
+            // Keep only last 5 activities
+            while (activityLog.children.length > 5) {
+                activityLog.removeChild(activityLog.lastChild);
+            }
+        }
+        
+        // Show notification
+        function showNotification(message, type = 'success') {
+            const notificationArea = document.getElementById('notificationArea');
+            const icons = {
+                'success': '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>',
+                'warning': '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>'
+            };
+            
+            const notification = document.createElement('div');
+            notification.className = `alert alert-${type}`;
+            notification.innerHTML = `
+                <svg class="w-5 h-5 ${type === 'success' ? 'text-green-400' : 'text-orange-400'}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    ${icons[type]}
+                </svg>
+                <span class="text-sm font-medium">${message}</span>
+            `;
+            
+            notificationArea.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.animation = 'slideInRight 0.5s ease-out reverse';
+                setTimeout(() => notification.remove(), 500);
+            }, 3000);
+        }
+        
+        // Adjust stock manually
+        function adjustStock() {
+            const adjustment = parseInt(document.getElementById('stockAdjustment').value) || 0;
+            if (adjustment === 0) {
+                showNotification('Please enter a non-zero value', 'warning');
+                return;
+            }
+            
+            currentStock += adjustment;
+            if (currentStock < 0) currentStock = 0;
+            
+            updateStockMetrics();
+            
+            const action = adjustment > 0 ? 'Added' : 'Removed';
+            addActivity(`${action} ${Math.abs(adjustment)} units manually`, adjustment > 0 ? 'success' : 'warning');
+            showNotification(`Stock ${adjustment > 0 ? 'increased' : 'decreased'} by ${Math.abs(adjustment)} units`, 'success');
+            
+            document.getElementById('stockAdjustment').value = 0;
+            eventCounter++;
+            document.getElementById('totalEvents').textContent = eventCounter;
+            document.getElementById('statTotalEvents').textContent = eventCounter;
+            updatePerformanceMetrics();
+        }
+        
+        // Update threshold
+        function updateThreshold(value) {
+            threshold = parseFloat(value);
+            document.getElementById('thresholdValue').textContent = threshold.toFixed(1);
+            document.getElementById('displayThreshold').textContent = threshold.toFixed(1);
+            updateStockMetrics();
+            addActivity(`Threshold updated to ${threshold.toFixed(1)} days`, 'info');
+            showNotification(`Alert threshold set to ${threshold.toFixed(1)} days`, 'success');
+        }
+        
+        // Place manual order
+        function placeManualOrder() {
+            orderCounter++;
+            const orderId = `ORDER-2026-${String(orderCounter).padStart(3, '0')}`;
+            const orderQty = 200;
+            const time = new Date().toLocaleTimeString('en-US', { hour12: false });
+            
+            const orderHistory = document.getElementById('orderHistory');
+            const orderHtml = `
+                <div class="event-item p-3 rounded-lg bg-slate-800/50 flex items-center justify-between">
+                    <div>
+                        <div class="text-sm font-semibold mono text-blue-400">${orderId}</div>
+                        <div class="text-xs text-slate-400">Placed: ${time} | Qty: ${orderQty} units</div>
+                    </div>
+                    <span class="text-xs px-3 py-1 rounded-full bg-yellow-500/20 text-yellow-400 mono">PENDING</span>
+                </div>
+            `;
+            
+            orderHistory.insertAdjacentHTML('afterbegin', orderHtml);
+            
+            addActivity(`Order ${orderId} placed for ${orderQty} units`, 'success');
+            showNotification(`Order ${orderId} placed successfully!`, 'success');
+            
+            document.getElementById('totalOrders').textContent = orderCounter;
+            eventCounter++;
+            document.getElementById('totalEvents').textContent = eventCounter;
+            document.getElementById('statTotalEvents').textContent = eventCounter;
+            updatePerformanceMetrics();
+        }
+        
+        // Simulate delivery
+        function simulateDelivery() {
+            const deliveryAmount = 200;
+            currentStock += deliveryAmount;
+            updateStockMetrics();
+            
+            addActivity(`Delivery received: ${deliveryAmount} units`, 'success');
+            showNotification(`Delivery of ${deliveryAmount} units received!`, 'success');
+            
+            // Update last order status to DELIVERED
+            const orders = document.getElementById('orderHistory').children;
+            if (orders.length > 0) {
+                const lastOrder = orders[0];
+                const statusBadge = lastOrder.querySelector('.mono:last-child');
+                if (statusBadge) {
+                    statusBadge.className = 'text-xs px-3 py-1 rounded-full bg-green-500/20 text-green-400 mono';
+                    statusBadge.textContent = 'DELIVERED';
+                }
+            }
+            
+            eventCounter++;
+            document.getElementById('totalEvents').textContent = eventCounter;
+            document.getElementById('statTotalEvents').textContent = eventCounter;
+            updatePerformanceMetrics();
+        }
+        
+        // Reset system to initial state
+        function resetSystem() {
+            if (confirm('Are you sure you want to reset the system to initial state?')) {
+                currentStock = 200;
+                threshold = 2.0;
+                document.getElementById('thresholdSlider').value = 2.0;
+                updateThreshold(2.0);
+                updateStockMetrics();
+                
+                addActivity('System reset to initial state', 'warning');
+                showNotification('System reset successfully!', 'success');
+                
+                eventCounter++;
+                document.getElementById('totalEvents').textContent = eventCounter;
+                document.getElementById('statTotalEvents').textContent = eventCounter;
+                updatePerformanceMetrics();
+            }
+        }
+        
+        // Initial activities
+        addActivity('System initialized', 'info');
+        addActivity('Monitoring started', 'success');
+        addActivity('Stock level: CRITICAL', 'warning');
+        
+        // Simulate periodic consumption (demo purposes)
+        setInterval(() => {
+            if (currentStock > 20) {
+                const consumption = Math.floor(Math.random() * 5) + 1;
+                currentStock -= consumption;
+                updateStockMetrics();
+                addActivity(`Consumed ${consumption} units`, 'info');
+                eventCounter++;
+                document.getElementById('totalEvents').textContent = eventCounter;
+                document.getElementById('statTotalEvents').textContent = eventCounter;
+            }
+        }, 45000); // Every 45 seconds
+        
+        // Periodic performance updates
+        setInterval(() => {
+            updatePerformanceMetrics();
+        }, 15000); // Every 15 seconds
+        
+        // Initial update
+        updateStockMetrics();
+    </script>
+</body>
+</html>

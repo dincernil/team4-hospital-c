@@ -18,8 +18,7 @@ def test_soap_envelope_xml_structure():
     """SOAP envelope XML yapısı doğru mu?"""
     data = {'currentStockUnits': 100, 'dailyConsumptionUnits': 50, 'daysOfSupply': 2.0}
     envelope = create_soap_envelope(data)
-    
-    # XML parse edilebilmeli
+   
     try:
         root = ET.fromstring(envelope)
         assert root is not None

@@ -17,7 +17,7 @@ def test_stockms_load():
             fail += 1
         time.sleep(0.1)
     
-    assert success > 25  # En az 25/30 başarılı
+    assert success > 25  
     print(f"Success: {success}, Fail: {fail}")
 
 def test_orderms_load():

@@ -7,15 +7,15 @@ from dotenv import load_dotenv
 from xml.etree import ElementTree as ET
 import time
 
-# .env dosyasını yükle
+
 load_dotenv()
 
-# Ayarlar
+
 SOAP_URL = os.getenv('SOAP_STOCK_UPDATE_URL', 'http://localhost:8000/StockUpdateService')
 HOSPITAL_ID = 'Hospital-C'
 PRODUCT_CODE = 'PHYSIO-SALINE-500ML'
 
-# Database bağlantı bilgileri
+
 DB_HOST = os.getenv('DB_HOST', 'localhost')
 DB_PORT = os.getenv('DB_PORT', '5432')
 DB_NAME = os.getenv('DB_NAME', 'hospital_db')
@@ -34,7 +34,7 @@ def get_db_connection():
         )
         return conn
     except Exception as e:
-        print(f"❌ Database bağlantı hatası: {e}")
+        print(f" Database bağlantı hatası: {e}")
         return None
 
 def get_current_stock():
@@ -63,7 +63,7 @@ def get_current_stock():
             }
         return None
     except Exception as e:
-        print(f"❌ Stok okuma hatası: {e}")
+        print(f"Stok okuma hatası: {e}")
         return None
 
 def log_event(event_type, status, payload=None, error_message=None, latency_ms=None):
@@ -89,22 +89,25 @@ def log_event(event_type, status, payload=None, error_message=None, latency_ms=N
 def create_soap_envelope(stock_data):
     """SOAP XML envelope oluştur"""
     timestamp = datetime.now().isoformat()
-    
+
     soap_envelope = f"""<?xml version="1.0" encoding="UTF-8"?>
-<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" 
-               xmlns:tns="http://hospital-supply-chain.example.com/soap/stock">
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
+               xmlns:tns="http://hospital-supply-chain.example.com/soap"
+               xmlns:stock="http://hospital-supply-chain.example.com/soap/stock">
     <soap:Body>
-        <tns:StockUpdateRequest>
-            <tns:hospitalId>{HOSPITAL_ID}</tns:hospitalId>
-            <tns:productCode>{PRODUCT_CODE}</tns:productCode>
-            <tns:currentStockUnits>{stock_data['currentStockUnits']}</tns:currentStockUnits>
-            <tns:dailyConsumptionUnits>{stock_data['dailyConsumptionUnits']}</tns:dailyConsumptionUnits>
-            <tns:daysOfSupply>{stock_data['daysOfSupply']:.2f}</tns:daysOfSupply>
-            <tns:timestamp>{timestamp}</tns:timestamp>
-        </tns:StockUpdateRequest>
+        <tns:StockUpdate>
+            <tns:request>
+                <stock:hospitalId>{HOSPITAL_ID}</stock:hospitalId>
+                <stock:productCode>{PRODUCT_CODE}</stock:productCode>
+                <stock:currentStockUnits>{stock_data['currentStockUnits']}</stock:currentStockUnits>
+                <stock:dailyConsumptionUnits>{stock_data['dailyConsumptionUnits']}</stock:dailyConsumptionUnits>
+                <stock:daysOfSupply>{stock_data['daysOfSupply']:.2f}</stock:daysOfSupply>
+                <stock:timestamp>{timestamp}</stock:timestamp>
+            </tns:request>
+        </tns:StockUpdate>
     </soap:Body>
 </soap:Envelope>"""
-    
+
     return soap_envelope
 
 def parse_soap_response(xml_response):
@@ -112,13 +115,13 @@ def parse_soap_response(xml_response):
     try:
         root = ET.fromstring(xml_response)
         
-        # Namespace'leri tanımla
+    
         namespaces = {
             'soap': 'http://schemas.xmlsoap.org/soap/envelope/',
-            'tns': 'http://hospital-supply-chain.example.com/soap/stock'
+            'tns': 'http://hospital-supply-chain.example.com/soap'
         }
         
-        # Response elemanlarını bul
+     
         success = root.find('.//tns:success', namespaces)
         message = root.find('.//tns:message', namespaces)
         order_triggered = root.find('.//tns:orderTriggered', namespaces)
@@ -143,7 +146,7 @@ def send_stock_update(stock_data, max_retries=3):
     """SOAP ile stok güncelleme mesajı gönder (retry mekanizmalı)"""
     
     print("\n" + "="*60)
-    print("📤 SOAP Request Gönderiliyor...")
+    print("SOAP Request Gönderiliyor...")
     print("="*60)
     
     retry_delays = [5, 15, 30]
@@ -155,14 +158,14 @@ def send_stock_update(stock_data, max_retries=3):
             soap_request = create_soap_envelope(stock_data)
             
             if attempt == 1:
-                print(f"🏥 Hospital ID: {HOSPITAL_ID}")
-                print(f"📦 Product: {PRODUCT_CODE}")
-                print(f"📊 Current Stock: {stock_data['currentStockUnits']} units")
-                print(f"📉 Daily Consumption: {stock_data['dailyConsumptionUnits']} units")
-                print(f"⏱️  Days of Supply: {stock_data['daysOfSupply']:.2f} days")
-                print(f"🔗 Endpoint: {SOAP_URL}")
+                print(f" Hospital ID: {HOSPITAL_ID}")
+                print(f"Product: {PRODUCT_CODE}")
+                print(f"Current Stock: {stock_data['currentStockUnits']} units")
+                print(f"Daily Consumption: {stock_data['dailyConsumptionUnits']} units")
+                print(f" Days of Supply: {stock_data['daysOfSupply']:.2f} days")
+                print(f" Endpoint: {SOAP_URL}")
             else:
-                print(f"\n🔄 Retry #{attempt}/{max_retries}")
+                print(f"\n Retry #{attempt}/{max_retries}")
             
             headers = {
                 'Content-Type': 'text/xml; charset=utf-8',
@@ -182,7 +185,7 @@ def send_stock_update(stock_data, max_retries=3):
             if response.status_code == 200:
                 parsed_response = parse_soap_response(response.text)
                 
-                print(f"\n✅ Response Alındı (Latency: {latency_ms}ms, Attempt: {attempt})")
+                print(f"\n Response Alındı (Latency: {latency_ms}ms, Attempt: {attempt})")
                 print("-"*60)
                 print(f"Success: {parsed_response['success']}")
                 print(f"Message: {parsed_response['message']}")
@@ -213,7 +216,7 @@ def send_stock_update(stock_data, max_retries=3):
             end_time = datetime.now()
             latency_ms = int((end_time - start_time).total_seconds() * 1000)
             
-            print(f"\n❌ SOAP Hatası (Attempt {attempt}/{max_retries}): {e}")
+            print(f"\nSOAP Hatası (Attempt {attempt}/{max_retries}): {e}")
             
             if attempt < max_retries:
                 wait_time = retry_delays[attempt - 1]
@@ -221,7 +224,7 @@ def send_stock_update(stock_data, max_retries=3):
                 time.sleep(wait_time)
             else:
                 print("="*60)
-                print("❌ Tüm denemeler başarısız oldu!")
+                print("Tüm denemeler başarısız oldu!")
                 
                 log_event(
                     event_type='STOCK_UPDATE_SENT',
@@ -241,18 +244,18 @@ def send_stock_update(stock_data, max_retries=3):
 def main():
     """Ana fonksiyon"""
     print("\n" + "="*60)
-    print("🏥 Hospital-C SOAP Client")
+    print("Hospital-C SOAP Client")
     print("="*60)
     
     # Mevcut stoku al
-    print("\n📊 Stok bilgisi alınıyor...")
+    print("\n Stok bilgisi alınıyor...")
     stock_data = get_current_stock()
     
     if not stock_data:
-        print("❌ Stok bilgisi alınamadı!")
+        print("Stok bilgisi alınamadı!")
         sys.exit(1)
     
-    print(f"✅ Stok bilgisi alındı:")
+    print(f" Stok bilgisi alındı:")
     print(f"   Current Stock: {stock_data['currentStockUnits']} units")
     print(f"   Daily Consumption: {stock_data['dailyConsumptionUnits']} units")
     print(f"   Days of Supply: {stock_data['daysOfSupply']:.2f} days")
@@ -261,9 +264,9 @@ def main():
     result = send_stock_update(stock_data)
     
     if result['success']:
-        print(f"\n✅ İşlem başarılı! (Latency: {result['latency_ms']}ms)")
+        print(f"\n İşlem başarılı! (Latency: {result['latency_ms']}ms)")
     else:
-        print(f"\n❌ İşlem başarısız!")
+        print(f"\n İşlem başarısız!")
         sys.exit(1)
 
 if __name__ == "__main__":

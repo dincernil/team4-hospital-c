@@ -45,5 +45,7 @@ postgres_data/
 .AppleDouble
 .LSOverride
 
-# Team 1 files (optional - sadece kendi projemizi push edelim)
-COMP464-Team1-Central-Platform/
+
+COMP464-Team1-Central-Platform/.env
+.env
+.env
